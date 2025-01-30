@@ -1,0 +1,5 @@
+ id | username |    email     |                           password                           |         created_at         
+----+----------+--------------+--------------------------------------------------------------+----------------------------
+  1 | sai      | sai@mail.com | $2b$12$.ILGV8fD37uuuB9DVk.NQOtsowRmNyJvOnF/pr7oJ/Ms59bgtyYea | 2025-01-29 21:30:53.479355
+(1 row)
+

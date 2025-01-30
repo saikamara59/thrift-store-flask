@@ -5,7 +5,7 @@ import jwt
 load_dotenv()
 
 
-from flask import Flask, jsonify, request , g
+from flask import Flask, jsonify, request 
 
 from auth_middleware import token_required
 
