@@ -5,7 +5,8 @@ import jwt
 load_dotenv()
 
 
-from flask import Flask, jsonify, request 
+
+from flask import Flask, jsonify, request,g 
 
 from auth_middleware import token_required
 
@@ -64,7 +65,7 @@ def signup():
         token = jwt.encode({ "payload": payload }, os.getenv('JWT_SECRET'))
         return jsonify({"token": token, "user": created_user}), 201
     except Exception as err:
-        return jsonify({"err": err}), 401
+        return jsonify({"error":  str(err)}), 401
 
     
 
@@ -93,5 +94,65 @@ def signin():
     finally:
          if connection: 
             connection.close()   
+
+
+@app.route('/orders', methods=['POST'])
+@token_required
+def create_order():
+    try:
+        current_user = g.user  
+        data = request.get_json()
+        connection = get_db_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Insert order
+        cursor.execute(
+            "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
+            (current_user['username'], data['total_amount'], data['shipping_address'])
+        )
+        order = cursor.fetchone()
+
+        # Insert order details
+        for item in data['items']:
+            cursor.execute(
+                "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
+                (order['order_id'], item['product_id'], item['quantity'], item['price'])
+            )
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+@app.route('/orders', methods=['GET'])
+@token_required
+def get_orders():
+    try:
+        current_user = g.user  # Access the decoded token data
+        connection = get_db_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Fetch orders for the current user
+        cursor.execute(
+            "SELECT * FROM orders WHERE username = %s;",
+            (current_user['username'],)
+        )
+        orders = cursor.fetchall()
+
+        # Fetch order details for each order
+        for order in orders:
+            cursor.execute(
+                "SELECT * FROM order_details WHERE order_id = %s;",
+                (order['order_id'],)
+            )
+            order['items'] = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+        return jsonify(orders), 200
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500            
 
 app.run()            
