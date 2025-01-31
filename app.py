@@ -155,4 +155,9 @@ def get_orders():
     except Exception as error:
         return jsonify({"error": str(error)}), 500            
 
+
+from products.routes import products_routes
+app.register_blueprint(products_routes)
+
+
 app.run()            
