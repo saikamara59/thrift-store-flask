@@ -4,14 +4,9 @@ import os
 import jwt
 load_dotenv()
 
-
-
 from flask import Flask, jsonify, request,g 
-
 from auth_middleware import token_required
-
 import psycopg2, psycopg2.extras
-
 
 app = Flask(__name__)
 
@@ -21,7 +16,6 @@ def get_db_connection():
                             user=os.getenv('POSTGRES_USERNAME'),
                             password=os.getenv('POSTGRES_PASSWORD'))
     return connection
-
 
 @app.route('/sign-token', methods=['GET'])
 def sign_token():
@@ -33,7 +27,6 @@ def sign_token():
     }
     token = jwt.encode(user, os.getenv('JWT_SECRET'), algorithm="HS256")    
     return jsonify({"token": token})
-
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
@@ -67,7 +60,6 @@ def signup():
     except Exception as err:
         return jsonify({"error":  str(err)}), 401
 
-    
 
 @app.route('/auth/signin', methods=["POST"])
 def signin():
@@ -87,8 +79,6 @@ def signin():
         # Updated code:
         token = jwt.encode({"username": existing_user["username"], "id": existing_user["id"]}, os.getenv('JWT_SECRET'))
         return jsonify({"token": token}), 200
-
-
     except Exception as error:
         return jsonify({"error": "Invalid credentials."}), 401
     finally:
@@ -111,14 +101,12 @@ def create_order():
             (current_user['username'], data['total_amount'], data['shipping_address'])
         )
         order = cursor.fetchone()
-
         # Insert order details
         for item in data['items']:
             cursor.execute(
                 "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
                 (order['order_id'], item['product_id'], item['quantity'], item['price'])
             )
-
         connection.commit()
         cursor.close()
         connection.close()
@@ -140,7 +128,6 @@ def get_orders():
             (current_user['username'],)
         )
         orders = cursor.fetchall()
-
         # Fetch order details for each order
         for order in orders:
             cursor.execute(
@@ -148,16 +135,14 @@ def get_orders():
                 (order['order_id'],)
             )
             order['items'] = cursor.fetchall()
-
         cursor.close()
         connection.close()
         return jsonify(orders), 200
     except Exception as error:
-        return jsonify({"error": str(error)}), 500            
+        return jsonify({"error": str(error)}), 500   
 
 
 from products.routes import products_routes
 app.register_blueprint(products_routes)
-
 
 app.run()            

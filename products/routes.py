@@ -118,7 +118,6 @@ def delete_product(product_id):
             cursor.close()
             connection.close()
             return jsonify({"error": "Product not found"}), 404
-
         connection.commit()
         cursor.close()
         connection.close()
