@@ -9,7 +9,7 @@ psycopg2-binary = "*"
 python-dotenv = "*"
 bcrypt = "*"
 pyjwt = "*"
-
+flask-cors = "*"
 
 [dev-packages]
 

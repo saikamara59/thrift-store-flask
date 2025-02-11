@@ -4,11 +4,13 @@ import os
 import jwt
 load_dotenv()
 
-from flask import Flask, jsonify, request,g 
+from flask import Flask, jsonify, request,g
+from flask_cors import CORS 
 from auth_middleware import token_required
 import psycopg2, psycopg2.extras
 
 app = Flask(__name__)
+CORS(app)
 
 def get_db_connection():
     connection = psycopg2.connect(host='localhost',
@@ -37,7 +39,7 @@ def verify_token():
     except Exception as error:
        return jsonify({"error": str(error)})
 
-@app.route('/auth/signup', methods=['POST'])
+@app.route('/auth/sign-up', methods=['POST'])
 def signup():
     try:
         new_user_data = request.get_json()
@@ -61,7 +63,7 @@ def signup():
         return jsonify({"error":  str(err)}), 401
 
 
-@app.route('/auth/signin', methods=["POST"])
+@app.route('/auth/sign-in', methods=["POST"])
 def signin():
     try:
         sign_in_form_data = request.get_json()
@@ -113,6 +115,37 @@ def create_order():
         return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+
+
+# @app.route('/orders', methods=['POST'])
+# @token_required
+# def create_order():
+#     try:
+#         current_user = g.user  
+#         data = request.get_json()
+#         connection = get_db_connection()
+#         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+#         # Insert order
+#         cursor.execute(
+#             "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
+#             (current_user['username'], data['total_amount'], data['shipping_address'])
+#         )
+#         order = cursor.fetchone()
+
+#         # Insert order details (items)
+#         for item in data['items']:
+#             cursor.execute(
+#                 "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
+#                 (order['order_id'], item['product_id'], item['quantity'], item['price'])
+#             )
+
+#         connection.commit()
+#         cursor.close()
+#         connection.close()
+#         return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
+#     except Exception as error:
+#         return jsonify({"error": str(error)}), 500
 
 @app.route('/orders', methods=['GET'])
 @token_required
