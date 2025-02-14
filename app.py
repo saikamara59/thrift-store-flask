@@ -37,84 +37,54 @@ def verify_token():
         decoded_token = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=["HS256"])
         return jsonify({"user": decoded_token})
     except Exception as error:
-       return jsonify({"error": str(error)})
+       return jsonify({"error": error.message})
 
 @app.route('/auth/sign-up', methods=['POST'])
-def signup():
-    try:
-        new_user_data = request.get_json()
-        connection = get_db_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM users WHERE username = %s or email = %s;", (new_user_data["username"], new_user_data["email"],)) 
-        existing_user = cursor.fetchone()
-        if existing_user:
-            cursor.close()
-            return jsonify({"error": "Username already taken"}), 400
-        hashed_password = bcrypt.hashpw(bytes(new_user_data["password"], 'utf-8'), bcrypt.gensalt())
-        cursor.execute("INSERT INTO users (username,email, password) VALUES (%s, %s, %s) RETURNING id,username, email;", (new_user_data["username"], new_user_data["email"],hashed_password.decode('utf-8')))
-        created_user = cursor.fetchone()
-        connection.commit()
-        cursor.close()
-        connection.close()
-        payload = {"username": created_user["username"], "id": created_user["id"]}
-        token = jwt.encode({ "payload": payload }, os.getenv('JWT_SECRET'))
-        return jsonify({"token": token, "user": created_user}), 201
-    except Exception as err:
-        return jsonify({"error":  str(err)}), 401
+def sign_up():
+  try:
+    new_user_data = request.get_json()
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM users WHERE username = %s or email = %s;", (new_user_data["username"], new_user_data["email"],)) 
+    existing_user = cursor.fetchone()
+    if existing_user:
+      cursor.close()
+      return jsonify({"err": "Username is already taken."}), 400
+    hashed_password = bcrypt.hashpw(bytes(new_user_data["password"], 'utf-8'), bcrypt.gensalt())
+    cursor.execute("INSERT INTO users (username, email, password) VALUES (%s, %s, %s) RETURNING id, username", (new_user_data["username"], new_user_data["email"], hashed_password.decode('utf-8')))
+    created_user = cursor.fetchone()
+    connection.commit()
+    connection.close()
+    payload = {"username": created_user["username"], "id": created_user["id"]}
+    token = jwt.encode({ "payload": payload }, os.getenv('JWT_SECRET'))
+    return jsonify({"token": token, "user": created_user}), 201
+  except Exception as err:
+    return jsonify({"err": err}), 401
+  
+@app.route('/auth/sign-in', methods=['POST'])
+def login():
+  try:
+    sign_in_form_data = request.get_json()
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM users WHERE username = %s;", (sign_in_form_data["username"],))
+    existing_user = cursor.fetchone()
+    if existing_user is None:
+      return jsonify({"err": "Invalid"}), 401
+    password_is_valid = bcrypt.checkpw(bytes(sign_in_form_data["password"], 'utf-8'), bytes(existing_user["password"], 'utf-8'))
+    if not password_is_valid:
+      return jsonify({"err": "Invalid"}), 401
+    payload = {"username": existing_user["username"], "id": existing_user["id"]}
+    token = jwt.encode({"payload": payload}, os.getenv('JWT_SECRET'))
+    return jsonify({"token": token}), 200
+  except Exception as err: 
+    return jsonify({"err": err.message}), 500
+  finally:
+    connection.close
 
-
-@app.route('/auth/sign-in', methods=["POST"])
-def signin():
-    try:
-        sign_in_form_data = request.get_json()
-        connection = get_db_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM users WHERE username = %s;", (sign_in_form_data["username"],))
-        existing_user = cursor.fetchone()
-        if existing_user is None:
-            return jsonify({"error": "Invalid credentials."}), 401
-        password_is_valid = bcrypt.checkpw(bytes(
-            sign_in_form_data["password"], 'utf-8'), bytes(existing_user["password"], 'utf-8'))
-        if not password_is_valid:
-            return jsonify({"error": "Invalid credentials."}), 401
-
-        # Updated code:
-        token = jwt.encode({"username": existing_user["username"], "id": existing_user["id"]}, os.getenv('JWT_SECRET'))
-        return jsonify({"token": token}), 200
-    except Exception as error:
-        return jsonify({"error": "Invalid credentials."}), 401
-    finally:
-         if connection: 
-            connection.close()   
-
-
-@app.route('/orders', methods=['POST'])
-@token_required
-def create_order():
-    try:
-        current_user = g.user  
-        data = request.get_json()
-        connection = get_db_connection()
-        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        # Insert order
-        cursor.execute(
-            "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
-            (current_user['username'], data['total_amount'], data['shipping_address'])
-        )
-        order = cursor.fetchone()
-        # Insert order details
-        for item in data['items']:
-            cursor.execute(
-                "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
-                (order['order_id'], item['product_id'], item['quantity'], item['price'])
-            )
-        connection.commit()
-        cursor.close()
-        connection.close()
-        return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
-    except Exception as error:
-        return jsonify({"error": str(error)}), 500
+@app.route('/')
+def index():
+  return "Landing Page"
 
 
 # @app.route('/orders', methods=['POST'])
@@ -132,20 +102,46 @@ def create_order():
 #             (current_user['username'], data['total_amount'], data['shipping_address'])
 #         )
 #         order = cursor.fetchone()
-
-#         # Insert order details (items)
+#         # Insert order details
 #         for item in data['items']:
 #             cursor.execute(
 #                 "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
 #                 (order['order_id'], item['product_id'], item['quantity'], item['price'])
 #             )
-
 #         connection.commit()
 #         cursor.close()
 #         connection.close()
 #         return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
 #     except Exception as error:
 #         return jsonify({"error": str(error)}), 500
+
+
+@app.route('/orders', methods=['POST'])
+@token_required
+def create_order():
+    try:
+        current_user = g.user  
+        data = request.get_json()
+        connection = get_db_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # Insert order
+        cursor.execute(
+            "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
+            (current_user['username'], data['total_amount'], data['shipping_address'])
+        )
+        order = cursor.fetchone()
+        for item in data['items']:
+            cursor.execute(
+                "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
+                (order['order_id'], item['product_id'], item['quantity'], item['price'])
+            )
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 @app.route('/orders', methods=['GET'])
 @token_required
@@ -154,14 +150,11 @@ def get_orders():
         current_user = g.user  # Access the decoded token data
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        # Fetch orders for the current user
         cursor.execute(
             "SELECT * FROM orders WHERE username = %s;",
             (current_user['username'],)
         )
         orders = cursor.fetchall()
-        # Fetch order details for each order
         for order in orders:
             cursor.execute(
                 "SELECT * FROM order_details WHERE order_id = %s;",
@@ -177,5 +170,7 @@ def get_orders():
 
 from products.routes import products_routes
 app.register_blueprint(products_routes)
+
+
 
 app.run()            
