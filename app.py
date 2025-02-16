@@ -160,4 +160,6 @@ from products.routes import products_routes
 app.register_blueprint(products_routes)
 
 
-app.run()            
+
+if __name__ == '__main__':
+    app.run()
