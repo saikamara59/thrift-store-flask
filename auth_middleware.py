@@ -6,17 +6,12 @@ import os
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Check if the Authorization header is present
         authorization_header = request.headers.get('Authorization')
         if authorization_header is None:
             return jsonify({"error": "Authorization header is missing"}), 401
-
-        try:
-            # Extract the token from the header (remove "Bearer ")
+        try:          
             token = authorization_header.split(' ')[1]
-            # Decode the token
             token_data = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=["HS256"])
-            # Assign the nested "payload" to g.user
             g.user = token_data.get("payload")
             if g.user is None:
                 return jsonify({"error": "Invalid token: 'payload' key not found"}), 401
@@ -27,6 +22,6 @@ def token_required(f):
         except Exception as error:
             return jsonify({"error": f"An error occurred: {str(error)}"}), 500
 
-        # Call the decorated function
+        
         return f(*args, **kwargs)
     return decorated_function

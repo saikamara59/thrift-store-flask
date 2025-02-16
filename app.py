@@ -90,35 +90,6 @@ def index():
   return "Landing Page"
 
 
-# @app.route('/orders', methods=['POST'])
-# @token_required
-# def create_order():
-#     try:
-#         current_user = g.user  
-#         data = request.get_json()
-#         connection = get_db_connection()
-#         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-#         # Insert order
-#         cursor.execute(
-#             "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
-#             (current_user['username'], data['total_amount'], data['shipping_address'])
-#         )
-#         order = cursor.fetchone()
-#         # Insert order details
-#         for item in data['items']:
-#             cursor.execute(
-#                 "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
-#                 (order['order_id'], item['product_id'], item['quantity'], item['price'])
-#             )
-#         connection.commit()
-#         cursor.close()
-#         connection.close()
-#         return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
-#     except Exception as error:
-#         return jsonify({"error": str(error)}), 500
-
-
 @app.route('/orders', methods=['POST'])
 @token_required
 def create_order():
@@ -129,39 +100,34 @@ def create_order():
             return jsonify({"error": "Username not found in token"}), 400
 
         data = request.get_json()
-        print("Received data:", data)  # Log the received data
+        print("Received data:", data)  
 
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        # Insert order
         cursor.execute(
             "INSERT INTO orders (username, total_amount, shipping_address) VALUES (%s, %s, %s) RETURNING order_id;",
             (current_user['username'], data['total_amount'], data['shipping_address'])
         )
         order = cursor.fetchone()
-        print("Order created:", order)  # Log the created order
-
-        # Insert order details
+        print("Order created:", order)  
         for item in data['items']:
             cursor.execute(
                 "INSERT INTO order_details (order_id, product_id, quantity, price_at_time_of_order) VALUES (%s, %s, %s, %s);",
                 (order['order_id'], item['product_id'], item['quantity'], item['price'])
             )
-
         connection.commit()
         cursor.close()
         connection.close()
         return jsonify({"message": "Order created successfully", "order_id": order['order_id']}), 201
     except Exception as error:
-        print("Error:", error)  # Log the error
+        print("Error:", error)  
         return jsonify({"error": str(error)}), 500
 
 @app.route('/orders', methods=['GET'])
 @token_required
 def get_orders():
     try:
-        current_user = g.user  # Access the decoded token data
+        current_user = g.user  
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(
@@ -184,7 +150,6 @@ def get_orders():
 
 from products.routes import products_routes
 app.register_blueprint(products_routes)
-
 
 
 app.run()            

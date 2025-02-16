@@ -1,15 +1,13 @@
 from flask import request, jsonify,Blueprint
-from auth_middleware import token_required  # Import the token_required decorator
+from auth_middleware import token_required  
 import psycopg2, psycopg2.extras
 from dotenv import load_dotenv
 import os
-from app import app  # Import the Flask app instance
+from app import app  
 
 load_dotenv()
 
-
 products_routes = Blueprint('products_routes', __name__)
-
 
 def get_db_connection():
     connection = psycopg2.connect(host='localhost',
@@ -38,7 +36,7 @@ def add_product():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-# Fetch all products
+
 @app.route('/products', methods=['GET'])
 def get_products():
     try:
@@ -52,7 +50,6 @@ def get_products():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-# Fetch a single product
 @app.route('/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
     try:
@@ -69,7 +66,6 @@ def get_product(product_id):
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-# Update a product
 @app.route('/products/<int:product_id>', methods=['PUT'])
 @token_required
 def update_product(product_id):
@@ -77,19 +73,15 @@ def update_product(product_id):
         data = request.get_json()
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        # Build the update query dynamically
         updates = []
         values = []
         for key, value in data.items():
             updates.append(f"{key} = %s")
             values.append(value)
         values.append(product_id)
-
         query = f"UPDATE products SET {', '.join(updates)} WHERE product_id = %s RETURNING product_id;"
         cursor.execute(query, values)
         product = cursor.fetchone()
-
         if not product:
             connection.rollback()
             cursor.close()
@@ -103,7 +95,7 @@ def update_product(product_id):
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
-# Delete a product
+
 @app.route('/products/<int:product_id>', methods=['DELETE'])
 @token_required
 def delete_product(product_id):
