@@ -12,7 +12,7 @@ def token_required(f):
         try:          
             token = authorization_header.split(' ')[1]
             token_data = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=["HS256"])
-            g.user = token_data.get("payload")
+            g.user = token_data.get("payload") or token_data
             if g.user is None:
                 return jsonify({"error": "Invalid token: 'payload' key not found"}), 401
         except jwt.ExpiredSignatureError:
