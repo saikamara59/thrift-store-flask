@@ -104,7 +104,7 @@ def index():
 def create_order():
     try:
         current_user = g.user
-        print("Current User:", current_user)  # Log the current_user object
+        print("Current User:", current_user)    
         if 'username' not in current_user:
             return jsonify({"error": "Username not found in token"}), 400
 
