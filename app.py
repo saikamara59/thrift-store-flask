@@ -21,9 +21,10 @@ def get_db_connection():
     else:
         connection = psycopg2.connect(
             host='localhost',
-            database=os.getenv('POSTGRES_DATABASE'),
-            user=os.getenv('POSTGRES_USERNAME'),
-            password=os.getenv('POSTGRES_PASSWORD')
+            database='thrift_store_db'
+            # database=os.getenv('POSTGRES_DATABASE'),
+            # user=os.getenv('POSTGRES_USERNAME'),
+            # password=os.getenv('POSTGRES_PASSWORD')
         )
     return connection
 
