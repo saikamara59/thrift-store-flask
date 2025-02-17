@@ -10,10 +10,18 @@ load_dotenv()
 products_routes = Blueprint('products_routes', __name__)
 
 def get_db_connection():
-    connection = psycopg2.connect(host='localhost',
-                            database='thrift_store_db',
-                            user=os.getenv('POSTGRES_USERNAME'),
-                            password=os.getenv('POSTGRES_PASSWORD'))
+    if 'ON_HEROKU' in os.environ:
+        connection = psycopg2.connect(
+            os.getenv('DATABASE_URL'), 
+            sslmode='require'
+        )
+    else:
+        connection = psycopg2.connect(
+            host='localhost',
+            database=os.getenv('POSTGRES_DATABASE'),
+            user=os.getenv('POSTGRES_USERNAME'),
+            password=os.getenv('POSTGRES_PASSWORD')
+        )
     return connection
 
 # Create a product
