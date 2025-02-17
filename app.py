@@ -12,6 +12,8 @@ import psycopg2, psycopg2.extras
 app = Flask(__name__)
 CORS(app)
 
+
+
 def get_db_connection():
     if 'ON_HEROKU' in os.environ:
         connection = psycopg2.connect(
