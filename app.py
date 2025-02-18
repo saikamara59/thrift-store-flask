@@ -22,9 +22,6 @@ def get_db_connection():
         connection = psycopg2.connect(
             host='localhost',
             database='thrift_store_db'
-            # database=os.getenv('POSTGRES_DATABASE'),
-            # user=os.getenv('POSTGRES_USERNAME'),
-            # password=os.getenv('POSTGRES_PASSWORD')
         )
     return connection
 
@@ -81,7 +78,7 @@ def sign_in():
         cursor.execute("SELECT * FROM users WHERE username = %s;", (sign_in_form_data["username"],))
         existing_user = cursor.fetchone()
         if existing_user is None:
-            return jsonify({"err": "Invalid"}), 401
+            return jsonify({"err": "Wrong Username/Password"}), 401
         password_is_valid = bcrypt.checkpw(bytes(
             sign_in_form_data["password"], 'utf-8'), bytes(existing_user["password"], 'utf-8'))
         if not password_is_valid:
@@ -90,7 +87,7 @@ def sign_in():
         token = jwt.encode({"payload": payload}, os.getenv('JWT_SECRET'))
         return jsonify({"token": token}), 200
     except Exception as err:
-        return jsonify({"err": "Invalid."}), 500
+        return jsonify({"err": "Wrong Username/Password."}), 500
     finally: 
             connection.close()   
 
