@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 
 def get_db_connection():
-    if 'ON_HEROKU' in os.environ:
+    if 'DATABASE_URL' in os.environ:
         connection = psycopg2.connect(
             os.getenv('DATABASE_URL'), 
             sslmode='require'
@@ -24,6 +24,7 @@ def get_db_connection():
             database='thrift_store_db'
         )
     return connection
+
 
 
 @app.route('/sign-token', methods=['GET'])
