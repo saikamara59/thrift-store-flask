@@ -22,7 +22,7 @@ def get_db_connection():
         connection = psycopg2.connect(
             host='localhost',
             database='thrift_store_db'
-        )
+        ) 
     return connection
 
 
