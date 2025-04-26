@@ -10,17 +10,25 @@ load_dotenv()
 products_routes = Blueprint('products_routes', __name__)
 
 def get_db_connection():
-    if 'DATABASE_URL' in os.environ:
-        connection = psycopg2.connect(
-            os.getenv('DATABASE_URL'), 
-            sslmode='require'
-        )
-    else:
-        connection = psycopg2.connect(
-            host='localhost',
-            database='thrift_store_db'
-        )
-    return connection
+    try:
+        if os.getenv('DATABASE_URL'):
+            # For production (Render, etc.)
+            connection = psycopg2.connect(
+                os.getenv('DATABASE_URL'), 
+                sslmode='require'
+            )
+        else:
+            # For local development
+            connection = psycopg2.connect(
+                host='localhost',
+                database='thrift_store_db',
+                user=os.getenv('POSTGRES_USERNAME', 'postgres'),  # default to 'postgres'
+                password=os.getenv('POSTGRES_PASSWORD', '')       # default to empty
+            )
+        return connection
+    except psycopg2.OperationalError as e:
+        print(f"Error connecting to database: {e}")
+        raise
 
 # Create a product
 @app.route('/products', methods=['POST'])
