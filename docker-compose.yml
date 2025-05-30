@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: thrift_store_db
+      POSTGRES_USER: saidu
+      POSTGRES_PASSWORD: kamara12345
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    environment:
+      POSTGRES_USERNAME: saidu
+      POSTGRES_PASSWORD: kamara12345
+      JWT_SECRET: supersecret
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

@@ -100,7 +100,7 @@ def sign_in():
             sign_in_form_data["password"], 'utf-8'), bytes(existing_user["password"], 'utf-8'))
         if not password_is_valid:
             return jsonify({"error": "Invalid credentials."}), 401
-        payload = {"username": existing_user["username"], "id": existing_user["id"]}
+        payload = {"username": existing_user["username"], "id": existing_user["id"], "is_admin": existing_user.get("is_admin", False)}
         token = jwt.encode({"payload": payload}, os.getenv('JWT_SECRET'))
         return jsonify({"token": token}), 200
     except Exception as err:
