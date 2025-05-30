@@ -2,12 +2,15 @@ import bcrypt
 from dotenv import load_dotenv
 import os
 import jwt
+
 load_dotenv()
 
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS 
 from auth_middleware import token_required
 import psycopg2, psycopg2.extras
+# from db import get_db_connection
+
 
 app = Flask(__name__)
 CORS(app)
@@ -189,5 +192,5 @@ app.register_blueprint(products_routes)
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
 
