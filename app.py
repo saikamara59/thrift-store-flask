@@ -7,34 +7,13 @@ load_dotenv()
 
 from flask import Flask, jsonify, request, g
 from flask_cors import CORS 
-from auth_middleware import token_required
+from auth_middleware import token_required, admin_required
 import psycopg2, psycopg2.extras
-# from db import get_db_connection
+
 
 
 app = Flask(__name__)
 CORS(app)
-
-# def get_db_connection():
-#     try:
-#         if os.getenv('DATABASE_URL'):
-#             # For production (Render, etc.)
-#             connection = psycopg2.connect(
-#                 os.getenv('DATABASE_URL'), 
-#                 sslmode='require'
-#             )
-#         else:
-#             # For local development
-#             connection = psycopg2.connect(
-#                 host='localhost',
-#                 database='thrift_store_db',
-#                 user=os.getenv('POSTGRES_USERNAME', 'postgres'),  # default to 'postgres'
-#                 password=os.getenv('POSTGRES_PASSWORD', '')       # default to empty
-#             )
-#         return connection
-#     except psycopg2.OperationalError as e:
-#         print(f"Error connecting to database: {e}")
-#         raise
 
 
 def get_db_connection():
@@ -47,14 +26,20 @@ def get_db_connection():
     return connection
 
 
-    # Test your database connection separately
-# import psycopg2
-# try:
-#     conn = psycopg2.connect(os.getenv('DATABASE_URL'), sslmode='require')
-#     print("Successfully connected to database!")
-#     conn.close()
-# except Exception as e:
-#     print(f"Connection failed: {e}")
+@app.route('/admin/orders', methods=['GET'])
+@token_required
+@admin_required
+def admin_get_orders():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM orders;")
+        orders = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return jsonify(orders), 200
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
 
 
 

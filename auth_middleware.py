@@ -3,6 +3,15 @@ from flask import request, jsonify, g
 import jwt
 import os
 
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not getattr(g, "user", None) or not g.user.get("is_admin"):
+            return jsonify({"error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+    return decorated
+
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

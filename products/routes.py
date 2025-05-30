@@ -117,3 +117,16 @@ def add_product():
         return jsonify({"message": "Product added successfully", "product_id": product['id']}), 201
     except Exception as error:
         return jsonify({"error": str(error)}), 500
+    
+@products_routes.route('/products', methods=['GET'])
+def get_products():
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM products;")
+        products = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        return jsonify(products), 200
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
