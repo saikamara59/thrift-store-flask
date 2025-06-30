@@ -18,7 +18,7 @@ CORS(app)
 
 def get_db_connection():
     connection = psycopg2.connect(
-        host='localhost',
+        host='db',
         database='thrift_store_db',
         user=os.getenv('POSTGRES_USERNAME'),
         password=os.getenv('POSTGRES_PASSWORD')
@@ -177,5 +177,5 @@ app.register_blueprint(products_routes)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
 

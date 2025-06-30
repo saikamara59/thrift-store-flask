@@ -5,7 +5,7 @@ load_dotenv()
 
 def get_db_connection():
     connection = psycopg2.connect(
-        host='localhost',
+        host='db',
         database='thrift_store_db',
         user=os.getenv('POSTGRES_USERNAME'),
         password=os.getenv('POSTGRES_PASSWORD')
