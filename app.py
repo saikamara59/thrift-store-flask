@@ -92,7 +92,7 @@ def sign_in():
         sign_in_form_data = request.get_json()
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM users WHERE username = %s;", (sign_in_form_data["username"],))
+        cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s;", (sign_in_form_data["username"],))
         existing_user = cursor.fetchone()
         if existing_user is None:
             return jsonify({"err": "Wrong Username/Password"}), 401

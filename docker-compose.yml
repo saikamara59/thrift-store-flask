@@ -1,6 +1,18 @@
-version: '3.8'
-
+version: "3.8"
 services:
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      POSTGRES_USERNAME: saidu
+      POSTGRES_PASSWORD: kamara12345
+      JWT_SECRET: supersecret
+    depends_on:
+      - db
+    networks:
+      - thriftnet
+
   db:
     image: postgres:15
     environment:
@@ -11,17 +23,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  backend:
-    build: .
-    environment:
-      POSTGRES_USERNAME: saidu
-      POSTGRES_PASSWORD: kamara12345
-      JWT_SECRET: supersecret
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
+    networks:
+      - thriftnet
 
 volumes:
   pgdata:
+
+networks:
+  thriftnet:
+    external: true
