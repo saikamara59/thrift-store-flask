@@ -92,21 +92,32 @@ def sign_in():
         sign_in_form_data = request.get_json()
         connection = get_db_connection()
         cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s;", (sign_in_form_data["username"],))
+        cursor.execute(
+            "SELECT * FROM users WHERE username = %s OR email = %s;",
+            (sign_in_form_data["username"], sign_in_form_data["username"])
+        )
         existing_user = cursor.fetchone()
         if existing_user is None:
             return jsonify({"err": "Wrong Username/Password"}), 401
-        password_is_valid = bcrypt.checkpw(bytes(
-            sign_in_form_data["password"], 'utf-8'), bytes(existing_user["password"], 'utf-8'))
+        password_is_valid = bcrypt.checkpw(
+            bytes(sign_in_form_data["password"], 'utf-8'),
+            bytes(existing_user["password"], 'utf-8')
+        )
         if not password_is_valid:
             return jsonify({"error": "Invalid credentials."}), 401
-        payload = {"username": existing_user["username"], "id": existing_user["id"], "is_admin": existing_user.get("is_admin", False)}
+        is_admin_db = existing_user.get("is_admin", False)
+        print("is_admin from db:", is_admin_db)
+        payload = {
+            "username": existing_user["username"],
+            "id": existing_user["id"],
+            "is_admin": is_admin_db in [True, 't', 'True', 1]
+        }
         token = jwt.encode({"payload": payload}, os.getenv('JWT_SECRET'))
         return jsonify({"token": token}), 200
     except Exception as err:
         return jsonify({"err": "Wrong Username/Password."}), 500
-    finally: 
-            connection.close()   
+    finally:
+        connection.close()
 
 
 @app.route('/')
@@ -170,6 +181,16 @@ def get_orders():
         return jsonify(orders), 200
     except Exception as error:
         return jsonify({"error": str(error)}), 500   
+    
+@app.route('/debug-admin/<username>')
+def debug_admin(username):
+    connection = get_db_connection()
+    cursor = connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cursor.execute("SELECT * FROM users WHERE username = %s;", (username,))
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    return jsonify(user)
 
 
 from products.routes import products_routes
